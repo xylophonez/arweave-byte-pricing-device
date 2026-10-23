@@ -9,6 +9,6 @@ Minimal p4 route entry:
 ```erlang
 #{
     <<"template">> => <<"/~bundler@1.0/item">>,
-    <<"pricing-device">> => <<"arweave-byte-pricing@1.0">>
+    <<"pricing-device">> => <<"arweave-byte-pricing@1.11">>
 }
 ```

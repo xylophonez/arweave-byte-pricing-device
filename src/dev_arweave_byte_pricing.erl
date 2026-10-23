@@ -5,8 +5,8 @@
 %%% metering rate, and converts the Arweave gateway `/price' result into AO
 %%% base units using `simple-oracle@1.0' AR and AO USD prices.
 -module(dev_arweave_byte_pricing).
--implements(<<"arweave-byte-pricing@1.0">>).
--export([info/1, estimate/3, price/3, quote/3]).
+-implements(<<"arweave-byte-pricing@1.11">>).
+-export([device_info/0, info/1, estimate/3, price/3, quote/3]).
 
 -include_lib("hb/include/hb.hrl").
 -ifdef(TEST).
@@ -17,8 +17,11 @@
 -define(BEAM_REDUCTIONS, <<"beam-reductions">>).
 
 %% @doc Device API information.
-info(_) ->
+device_info() ->
     #{ exports => [<<"estimate">>, <<"price">>, <<"quote">>] }.
+
+%% @doc Legacy metadata entry point for existing Erlang callers.
+info(_) -> device_info().
 
 %% @doc Open metering and estimate the cost of a bundler upload if possible.
 estimate(Base, Req, Opts) ->
@@ -140,7 +143,10 @@ quote_bundled_item(Item, Base, Opts) ->
                 {bundled_item_estimate_failed, Class, Reason, {trace, Stack}},
                 Opts
             ),
-            {ok, 0}
+            {error, #{
+                <<"status">> => 503,
+                <<"body">> => <<"Unable to quote this upload. Retry when pricing is available.">>
+            }}
     end.
 
 %% @doc Return the ANS-104 serialized size of a bundled item.
@@ -479,7 +485,7 @@ metered_price_test() ->
             ]
         ),
     try
-        Pricing = #{ <<"device">> => <<"arweave-byte-pricing@1.0">> },
+        Pricing = #{ <<"device">> => <<"arweave-byte-pricing@1.11">> },
         Opts = oracle_opts(GatewayOpts, OracleURL),
         {ok, 0} =
             hb_ao:resolve(Pricing, #{ <<"path">> => <<"estimate">> }, Opts),
@@ -510,7 +516,7 @@ unfunded_raw_bundler_upload_rejected_test() ->
         #{
             <<"device">> => <<"p4@1.0">>,
             <<"ledger-device">> => <<"simple-pay@1.0">>,
-            <<"pricing-device">> => <<"arweave-byte-pricing@1.0">>
+            <<"pricing-device">> => <<"arweave-byte-pricing@1.11">>
         },
     Opts =
         GatewayOpts#{
@@ -591,6 +597,7 @@ oracle_opts(GatewayOpts, OracleURL) ->
         },
         <<"oracle-cache-ttl-ms">> => 0,
         <<"relay-http-client">> => httpc,
+        <<"relay-block-internal">> => false,
         <<"metering-rates">> => #{ ?BEAM_REDUCTIONS => 0 }
     }.
 
@@ -599,5 +606,40 @@ base_url(Node) ->
         $/ -> binary:part(Node, 0, byte_size(Node) - 1);
         _ -> Node
     end.
+
+
+%% @doc Unavailable native Arweave pricing cannot admit a free paid upload.
+unavailable_gateway_estimate_fails_closed_test() ->
+    Store = hb_test_utils:test_store(hb_store_fs, <<"pricing-outage">>),
+    Opts = #{
+        <<"store">> => [Store],
+        <<"priv-store">> => [Store],
+        <<"priv-wallet">> => ar_wallet:new(),
+        <<"arweave-byte-price">> => <<"dynamic">>,
+        <<"http-timeout">> => 1000,
+        <<"http-connect-timeout">> => 1000,
+        <<"routes">> => [#{
+            <<"template">> => <<"^/arweave">>,
+            <<"node">> => #{
+                <<"match">> => <<"^/arweave">>,
+                <<"with">> => <<"http://127.0.0.1:1">>,
+                <<"opts">> => #{<<"http-client">> => httpc, <<"protocol">> => http2}
+            }
+        }]
+    },
+    ?assertMatch({error, _}, hb_ao:resolve(
+        #{<<"device">> => <<"arweave@2.9">>},
+        #{<<"path">> => <<"price">>, <<"size">> => 100}, Opts)),
+    Item = hb_message:commit(
+        #{<<"data">> => <<"synthetic-price-outage">>}, Opts, <<"ans104@1.0">>),
+    Request = #{
+        <<"path">> => <<"/~bundler@1.0/tx">>,
+        <<"bundler-subject">> => <<"body">>,
+        <<"body">> => Item
+    },
+    ?assertMatch({error, #{<<"status">> := 503}}, hb_ao:resolve(
+        #{<<"device">> => <<"arweave-byte-pricing@1.11">>},
+        #{<<"path">> => <<"estimate">>, <<"request">> => Request,
+            <<"body">> => [Request]}, Opts)).
 
 -endif.

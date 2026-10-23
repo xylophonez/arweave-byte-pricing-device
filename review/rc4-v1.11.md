@@ -1,0 +1,13 @@
+# RC4 byte pricing review
+
+The published adapter turns an exception while estimating a bundled upload into a zero quote. `arweave-byte-pricing@1.11` returns 503 so the caller can retry when pricing is available. Deliberate free tiers, premiums, fixed quotes and metered pricing retain their existing behavior. The new device advertises the RC4 `device_info/0` interface; `info/1` remains a compatibility entry point.
+
+Operator configuration cannot replace the private estimation catch branch. No device, protocol, transport or state subsystem is added. Existing pricing owns the quote; native P4 owns admission, `metering@1.0` owns counters, and the configured oracle owns currency prices. No canonical old-version alias or published implementation is rebound.
+
+Splash level: 4. Ladder rung: (b). Adherence: partial. This authorized behavior repair exceeds rung (b)'s exposing-data-only definition. Scope agreed by the user; independent review by the parent integration agent completed before submission, with no behavior blocker. Precedents: `src/dev_arweave_byte_pricing.erl:137` owns bundled estimation; RC4 `src/preloaded/arweave/dev_arweave.erl:31` advertises the same metadata interface. Owners: existing byte-pricing, native P4 and metering; duplication: none. No kernel or canonical-preload edits. The new version is opt-in; no unconditional or identity-rebinding multiplier applies to old versions.
+
+Standalone dependency and Forge plugin are pinned to HyperBEAM-dev `ad415bdaaf887fb76c0a8b4f54d91fab3f9fccd8`, plugin subdirectory `src/forge/plugin`. This targets that RC4 contract. Revalidate on a future HyperBEAM pin bump; do not assume future compatibility. Landing the repair in this device's upstream retires the old local review patch.
+
+Validation: standalone compile; all 11 Forge device tests, including fixed/premium/free-tier controls, dynamic pricing, metered pricing, unfunded HTTP upload rejection, and a new actual AO-Core estimate outage regression. The outage fixture first proves native Arweave price lookup fails at an explicit loopback route, then requires 503 through `hb_ao:resolve`. The oracle test dependency matches fresh upstream `bdd44b4` byte-for-byte. Production packaging, verification and a fresh signed preload/cold-load control pass; production archive lacks test functions and quotes 5 bytes at rate 7 as 35.
+
+Only disposable local signing keys and synthetic requests were used. No funded transaction or package publication occurred. Public specification searches found no `arweave-byte-pricing@1.11` collision. Ratings remain splash 4 / rung (b) / partial at submission.

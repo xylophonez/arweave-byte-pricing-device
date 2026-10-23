@@ -8,3 +8,5 @@
 /logs/
 /cache-mainnet/
 /.rebar3/
+/cache-TEST/
+/cache-attested/

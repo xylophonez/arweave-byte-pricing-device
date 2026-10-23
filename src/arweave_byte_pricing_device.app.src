@@ -1,6 +1,6 @@
 {application, arweave_byte_pricing_device, [
     {description, "Standalone HyperBEAM Arweave byte pricing device"},
-    {vsn, "0.1.0"},
+    {vsn, "1.11.0"},
     {registered, []},
     {applications, [kernel, stdlib]},
     {env, []},

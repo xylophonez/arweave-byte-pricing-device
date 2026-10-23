@@ -1,6 +1,6 @@
 # Arweave Byte Pricing Device
 
-Standalone HyperBEAM Forge package for `arweave-byte-pricing@1.0`.
+Standalone HyperBEAM Forge package for `arweave-byte-pricing@1.11`.
 
 Prices Arweave bundled bytes in AO base units for p4@1.0.
 
@@ -8,8 +8,8 @@ It opens/closes metering@1.0 sessions, reads arweave-bytes usage, supports fixed
 
 ## Compatibility
 
-- HyperBEAM pin: `4177b91993b2f590f4906bc9ca548724f8408875`
-- Device name: `arweave-byte-pricing@1.0`
+- HyperBEAM pin: `ad415bdaaf887fb76c0a8b4f54d91fab3f9fccd8`
+- Device name: `arweave-byte-pricing@1.11`
 
 ## Build
 
@@ -22,8 +22,12 @@ rebar3 device verify
 ## Test
 
 ```sh
-scripts/pre-push-test.sh
+ORACLE_DEVICE_SRC=/path/to/simple-oracle-device/src scripts/pre-push-test.sh
 ```
+
+The oracle source is a test dependency; the default path is the sibling
+`../simple-oracle-device/src`. Validation used upstream commit
+`bdd44b41630b38feedbff34559483e86e1dd21a0`.
 
 Install the local pre-push hook with:
 
